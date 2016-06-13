@@ -1,0 +1,956 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <title>reveal.js</title>
+
+  <link rel="stylesheet" href="css/reveal.css">
+  <link rel="stylesheet" href="css/theme/black.css">
+
+  <!-- Theme used for syntax highlighting of code -->
+  <link rel="stylesheet" href="lib/css/zenburn.css">
+
+  <!-- Printing and PDF exports -->
+  <script>
+    var link = document.createElement( 'link' );
+    link.rel = 'stylesheet';
+    link.type = 'text/css';
+    link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+    document.getElementsByTagName( 'head' )[0].appendChild( link );
+  </script>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+      <section>
+        <h2>Building a Rails Engine</h2>
+        <h4>Joshua Dayan</h4>
+      </section>
+      <section>
+        <h2>Follow the presentation</h2>
+        <p>
+          <a href="https://github.com/building-a-rails-engine-2016">
+            https://github.com/building-a-rails-engine-2016
+          </a>
+        </p>
+      </section>
+      <section>
+        <h2>About Me</h2>
+        <ul>
+          <li>Application Developer at ej4, 2014 - present</li>
+          <li>Web Developer at Monsanto, 2013</li>
+          <li>Database Engineer at IBM, 2012</li>
+        </ul>
+      </section>
+      <section>
+        <h2>ej4, LLC</h2>
+        <p>
+          We're often asked if we're a video company or a learning company.
+          To which we say, we're neither. We are a performance improvement
+          company. 
+        </p>
+      </section>
+      <section>
+        <section>
+          <h2>What is an engine</h2>
+        </section>
+        <section>
+          <p>
+            Engines can be considered miniature applications that provide functionality to their host applications.
+          </p>
+        </section>
+        <section>
+          <p>
+            A Rails application is actually just a "supercharged" engine, with the Rails::Application class inheriting a lot of its behavior from Rails::Engine.
+          </p>
+        </section>
+        <section>
+          <p>
+            Therefore, engines and applications can be thought of almost the same thing, just with subtle differences...
+          </p>
+        </section>
+      </section>
+      <section>
+        <h2>Agenda</h2>
+        <div class="fragment fade-in">
+          <p>Look at three examples of engines</p>
+        </div>
+        <ol>
+          <div class="fragment fade-in">
+            <li>Hello, world!</li>
+          </div>
+          <div class="fragment fade-in">
+            <li>Using an engine for a single application</li>
+          </div>
+          <div class="fragment fade-in">
+            <li>Share an engine over two applications</li>
+          </div>
+        </ol>
+      </section>
+      <section>
+        <section>
+          <h2>Hello, World!</h2>
+        </section>
+        <section>
+          <h3>Setting it Up</h3>
+          <div class="fragment fade-in">
+            <pre class="big-code">
+              <code class="align-center">
+                rails plugin new hello_world -- mountable
+              </code>
+            </pre>
+          </div>
+          <div class="fragment fade-in">
+            <pre class="big-code">
+              <code class="align-center">
+                ...
+        create  hello_world.gemspec
+        create  lib/hello_world.rb
+        create  lib/tasks/hello_world_tasks.rake
+        create  lib/hello_world/version.rb
+        create  lib/hello_world/engine.rb
+    vendor_app  test/dummy
+                ...
+              </code>
+            </pre>
+          </div>
+        </section>
+        <section>
+          <h3>Setting it up</h3>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+require 'hello_world/version'
+
+Gem::Specification.new do |s|
+  s.name        = 'hello_world'
+  s.version     = HelloWorld::VERSION
+  s.authors     = ['Joshua Dayan']
+  s.email       = ['josh.dayan@ej4.com']
+  s.homepage    = ''
+  s.summary     = 'Summary of HelloWorld.'
+  s.description = 'Description of HelloWorld.'
+  s.license     = 'MIT'
+
+  s.files = Dir['{app,config,db,lib}/**/*', 'MIT-LICENSE', 'Rakefile', 'README.rdoc']
+  s.test_files = Dir['test/**/*']
+
+  s.add_dependency 'rails', '~> 4.2.6'
+
+  s.add_development_dependency 'sqlite3'
+end
+
+hello_world.gemspec
+              </code>
+            </pre>
+          </div>
+        </section>
+        <section>
+          <h3>Setting it up</h3>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+                module HelloWorld
+                  VERSION = '0.0.1'.freeze
+                end
+
+                lib/hello_world/version.rb
+              </code>
+            </pre>
+          </div>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+                module HelloWorld
+                  class Engine < ::Rails::Engine
+                    isolate_namespace HelloWorld
+                  end
+                end
+
+                lib/hello_world/engine.rb
+              </code>
+            </pre>
+          </div>
+        </section>
+        <section>
+          <h3>Setting it Up</h3>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+                bundle
+                cd test/dummy
+                rails s
+              </code>
+            </pre>
+          </div>
+          <div class="fragment fade-in">
+            <p>
+              <img src="images/rails_default_page.png" alt="Rails default page" height="73%" width="73%">
+            </p>
+          </div>
+        </section>
+        <section>
+          <h3>Setting it up</h3>
+          <div class="fragment fade-in">
+            <p>We are looking at a blank host application.</p>
+          </div>
+          <div class="fragment fade-in">
+            <p>How do we mount our engine?</p>
+          </div>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+                Rails.application.routes.draw do
+                  mount HelloWorld::Engine => '/hello_world'
+                end
+
+                test/dummy/config/routes.rb
+              </code>
+            </pre>
+          </div>
+        </section>
+        <section>
+          <h3>Seeing our engine</h3>
+          <div class="fragment fade-in">
+            <p>
+              Navigate to <a href="#">localhost:3000/hello_world</a>
+            </p>
+          </div>
+          <div class="fragment fade-in">
+            <img src="images/hello_world_routing_error.png" alt="/hello_world">
+          </div>
+          <div class="fragment fade-in">
+            <p>Why?</p>
+          </div>
+        </section>
+        <section>
+          <h3>Setting our routes</h3>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+                HelloWorld::Engine.routes.draw do
+                end
+
+                config/routes.rb
+              </code>
+            </pre>
+          </div>
+          <div class="fragment fade-in">
+            <p>We need to set a default route.</p>
+            <p>Engines don't have default pages like rails applications do.</p>
+          </div>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+                HelloWorld::Engine.routes.draw do
+                  root 'welcome#index'
+                end
+
+                config/routes.rb
+              </code>
+            </pre>
+          </div>
+        </section>
+        <section>
+          <h3>Creating a root path</h3>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+                module HelloWorld
+                  class WelcomeController < ApplicationController
+                    def index
+                    end
+                  end
+                end
+
+                app/controllers/hello_world/welcome_controller.rb
+              </code>
+            </pre>
+          </div>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+                Hello, world!
+
+                app/views/hello_world/welcome/index.html.erb
+              </code>
+            </pre>
+          </div>
+        </section>
+        <section>
+          <h3>Seeing Hello, World!</h3>
+          <div class="fragment fade-in">
+            <p>
+              <img src="images/hello_world_output.png" alt="Hello, world!">
+            </p>
+          </div>
+        </section>
+        <section>
+          <h3>Recap</h3>
+            <ul>
+              <li>
+                An engine is essentially a rails application that needs to be mounted on a host application.
+              </li>
+              <ul>
+                <li>Which is done using the <code>mount</code> command in the <code>config/routes.rb</code> file.</li>
+              </ul>
+              <li>Engines are namespaced</li>
+                <ul>
+                  <li>Share the same model/controller/view names as the host application</li>
+                </ul>
+            </ul>
+          </p>
+        </section>
+      </section>
+      <section>
+        <section>
+          <h2>Real Project</h2>
+          <div class="fragment fade-in">
+            <p>
+              Commissioned by "The Derek Zoolander Center For Kids Who Can't Read Good And Wanna Learn To Do Other Stuff Good Too”
+            </p>
+          </div>
+        </section>
+        <section>
+          <h3>Feature Requests</h3>
+          <ul>
+            <div class="fragment fade-in">
+              <li>Basic Information</li>
+            </div>
+            <ul>
+              <div class="fragment fade-in">
+                <li>Mission Statement</li>
+              </div>
+              <div class="fragment fade-in">
+                <li>About Us Information</li>
+              </div>
+              <div class="fragment fade-in">
+                <li>Contact Information</li>
+              </div>
+            </ul>
+              <div class="fragment fade-in">
+                <li>Calender of events</li>
+              </div>
+              <div class="fragment fade-in">
+                <li>Display of their inventory</li>
+              </div>
+              <ul>
+                <div class="fragment fade-in">
+                  <li>Books</li>
+                </div>
+                <div class="fragment fade-in">
+                  <li>Movies</li>
+                </div>
+                <div class="fragment fade-in">
+                  <li>Music</li>
+                </div>
+              </ul>
+          </ul>
+        </section>
+        <section>
+          <h3>Basic Information</h3>
+          <img src="images/dashboard_page.gif" alt="Dashboard page">
+        </section>
+        <section>
+          <h3>Calender of events</h3>
+          <img src="images/events.png" alt="Events page">
+        </section>
+        <section>
+          <h3>Display of inventory</h3>
+          <img src="images/library.png" alt="Library page">
+        </section>
+        <section>
+          <h3>New Feature - Users</h3>
+          <div class="fragment fade-in">
+            <p>Users need to be able to...</p>
+          </div>
+          <ul>
+            <div class="fragment fade-in">
+              <li>Log into the site (obviously)</li>
+            </div>
+            <div class="fragment fade-in">
+              <li>Register for events</li>
+            </div>
+            <div class="fragment fade-in">
+              <li>Checkout items</li>
+            </div>
+            <ul>
+              <div class="fragment fade-in">
+                <li>Pay fees</li>
+              </div>
+              <ul>
+                <div class="fragment fade-in">
+                  <li>Library fines</li>
+                </div>
+                <div class="fragment fade-in">
+                  <li>Registration fees</li>
+                </div>
+              </ul>
+              <div class="fragment fade-in">
+                <li>Buy items</li>
+              </div>
+            </ul>
+          </ul>
+        </section>
+        <section>
+          <h3>Loggin onto the site</h3>
+          <img src="images/logging_in.gif" alt="User logs onto the site">
+        </section>
+        <section>
+          <h3>Registering for events</h3>
+          <img src="images/registration.gif" alt="User registers for an event">
+        </section>
+        <section>
+          <h3>Checking out items</h3>
+          <img src="images/check_out.gif" alt="User checks out an intem">
+        </section>
+      </section>
+      <section>
+        <section>
+          <h2>New Feature - Admin Section</h2>
+          <div class="fragment fade-in">
+            <p>Administration companion to the regular site</p>
+          </div>
+          <div class="fragment fade-in">
+            <p>Center admins need to be able to monitor all user activity</p>
+          </div>
+        </section>
+        <section>
+          <h3>How to approach the problem</h3>
+          <div class="fragment fade-in">
+            <p>Add the admin functionality directly to the app</p>
+          </div>
+          <div class="fragment fade-in">
+            <p>Obvious solution</p>
+          </div>
+          <div class="fragment fade-in">
+            <p>Or is it?</p>
+          </div>
+          <div class="fragment fade-in">
+            <p>Either way, let's implement it</p>
+          </div>
+        </section>
+        <section>
+          <h3>Creating the routes</h3>
+          <div class="fragment fade-in">
+            <p>Two options</p>
+            <p>Scope or Namespace</p>
+          </div>
+        </section>
+        <section>
+          <h3>Scope</h3>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+                Rails.application.routes.draw do
+                  ...
+                  scope '/admin', module: 'admin' do
+                    resources :users, only: [:index]
+                  end
+                  ...
+                end
+
+                zoolander/config/routes.rb
+              </code>
+            </pre>
+          </div>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+                '/admin/users' => 'admin/users#index'
+              </code>
+            </pre>
+          </div>
+        </section>
+        <section>
+          <h3>Namespace</h3>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+                Rails.application.routes.draw do
+                  ...
+                  namespace :admin do
+                    resources :users, only: [:index]
+                  end
+                  ...
+                end
+
+                zoolander/config/routes.rb
+              </code>
+            </pre>
+          </div>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+                '/admin/users' => 'admin/users#index'
+              </code>
+            </pre>
+          </div>
+        </section>
+        <section>
+          <h3>Creating the controller</h3>
+          <div class="fragment fade-in">
+            <pre>
+              <code data-trim>
+module Admin
+  class UsersController < ApplicationController
+    def index
+      @users = User.all
+    end
+
+    ...
+
+    def destroy
+      User.find(params[:id]).destroy
+      redirect_to admin_users_path,
+                  notice: 'User has been successfully destroyed.'
+    end
+  end
+end
+
+zoolander/app/controllers/admin/users_controller.rb
+              </code>
+            </pre>
+          </div>
+        </section>
+        <section>
+          <h3>Creating the view</h3>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+                ...
+                <% @users.each do |user| %>
+                  <% # Display the user %>
+                <% end %>
+                ...
+
+                zoolander/app/views/admin/users/index.html.erb
+              </code>
+            </pre>
+          </div>
+        </section>
+        <section>
+          <h3>The result</h3>
+          <p>
+            Navigate to <a href="#">localhost:3000/admin/users</a>
+          </p>
+          <img src="images/admin.png" alt="Admin Page">
+        </section>
+        <section>
+          <h3>So, what's the problem?</h3>
+        </section>
+      </section>
+      <section>
+        <section>
+          <h2>The Problem</h2>
+          <div class="fragment fade-in">
+            <p>
+              We have created a coupling between normal
+              users and admins.
+            </p>
+          </div>
+          <div class="fragment fade-in">
+            <p>
+              We have two distinct sections of code that live
+              in the same application.
+            </p>
+          </div>
+          <div class="fragment fade-in">
+            <p>
+              These sections have seperate end users,
+              with seperate functionality, so they should exist
+              in seperate locations.
+            </p>
+          </div>
+        </section>
+        <section>
+          <h3>Why is that bad?</h3>
+          <div class="fragment fade-in">
+            <p>
+              It might not be from a users perspective,
+              but it from a developer's.
+            </p>
+          </div>
+          <div class="fragment fade-in">
+            <p>
+              We are creating complication that will increase
+              as the project expands.
+            </p>
+          </div>
+        </section>
+      </section>
+      <section>
+        <section>
+          <h2>The better solution</h2>
+          <div class="fragment fade-in">
+            <p>(And the whole point of this talk)</p>
+          </div>
+          <div class="fragment fade-in">
+            <p>Using an engine</p>
+          </div>
+        </section>
+        <section>
+          <h3>Admin Engines</h3>
+          <div class="fragment fade-in">
+            <p>
+              A simple search on github shows over 2,000
+              ruby projects with the name admin.
+            </p>
+          </div>
+          <div class="fragment fade-in">
+            <p>
+              It's an easy place to start.
+            </p>
+          </div>
+        </section>
+        <section>
+          <h3>Creating the engine</h3>
+          <div class="fragment fade-in">
+            <p>Step one, remove the existing admin code</p>
+          </div>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+                rm zoolander/app/controllers/admin/*
+                rm zoolander/app/views/admin/*
+              </code>
+            </pre>
+          </div>
+        </section>
+        <section>
+          <h3>Creating the engine</h3>
+          <div class="fragment fade-in">
+            <p>Step two, add the engine</p>
+          </div>
+          <div class="fragment fade-in">
+            <p>Development</p>
+            <pre>
+              <code>
+                gem 'admin', path: '/path/to/project'
+
+                zoolander/Gemfile
+              </code>
+            </pre>
+          </div>
+          <div class="fragment fade-in">
+            <p>Production</p>
+            <pre>
+              <code>
+                gem 'admin', '0.0.1'
+
+                zoolander/Gemfile
+              </code>
+            </pre>
+          </div>
+        </section>
+        <section>
+          <h3>Creating the engine</h3>
+          <div class="fragment fade-in">
+            <p>Step three, replacing the routing logic</p>
+          </div>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+                Rails.application.routes.draw do
+                  ...
+                  namespace :admin do
+                    resources :users, only: [:index]
+                  end
+                  ...
+                end
+
+                zoolander/config/routes.rb
+              </code>
+            </pre>
+          </div>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+                Rails.application.routes.draw do
+                  ...
+                  mount Admin::Engine => '/admin'
+                  ...
+                end
+
+                zoolander/config/routes.rb
+              </code>
+            </pre>
+          </div>
+        </section>
+        <section>
+          <h3>Creating the engine</h3>
+          <div class="fragment fade-in">
+            <p>Step four, move existing logic to the new engine</p>
+          </div>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+                rails plugin new admin --mountable
+              </code>
+            </pre>
+          </div>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+                cp admin/app/controllers/admin/*
+                cp admin/app/views/admin/*
+                cp admin/app/assets/*
+              </code>
+            </pre>
+          </div>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+                Admin::Engine.routes.draw do
+                  resources :users
+                end
+
+                admin/config/routes.rb
+              </code>
+            </pre>
+          </div>
+        </section>
+        <section>
+          <h3>The result</h3>
+          <div class="fragment fade-in">
+            <p>(the same)</p>
+            <img src="images/admin.png" alt="Users admin page">
+          </div>
+        </section>
+        <section>
+          <h3>Let's look at a more complicated example...</h3>
+        </section>
+      </section>
+      <section>
+        <section>
+          <h2>New Project</h2>
+          <div class="fragment fade-in">
+            Commissioned by the Library of Congress
+          </div>
+          <div class="fragment fade-in">
+            Catalog system for displaying their records
+          </div>
+          <div class="fragment fade-in">
+            We have permission to use our existing system
+          </div>
+        </section>
+        <section>
+          <h3>What we currently have</h3>
+          <img src="images/library.png" alt="Zoolander inventory">
+        </section>
+        <section>
+          <h3>Getting started</h3>
+          <div class="fragment fade-in">
+            <p>
+              We will start by copying over our existing
+              views and controller setups to a new project.
+            </p>
+          </div>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+                rails new congress
+              </code>
+            </pre>
+          </div>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+                cp zoolander/app/controllers/items_controller.rb
+                cp zoolander/app/views/items/index.html.erb
+              </code>
+            </pre>
+          </div>
+        </section>
+        <section>
+          <h3>Set up the routes</h3>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+                Rails.application.routes.draw do
+                  root to: 'documents#index'
+
+                  get '/catalog' => 'documents#index'
+                end
+
+                congress/config/routes.rb
+              </code>
+            </pre>
+          </div>
+        </section>
+        <section>
+          <h3>Set up the controllers</h3>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+                class DocumentsController < ApplicationController
+                  def index
+                    @documents = Document.all
+                  end
+                end
+
+                congress/app/controllers/documents_controller.rb
+              </code>
+            </pre>
+          </div>
+        </section>
+        <section>
+          <h3>Set up the views</h3>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+                ...
+                <p class="lead">Catalog</p>
+                ...
+                <% @documents.each do |document| %>
+                  <% # Display the document %>
+                <% end %>
+                ...
+
+                congress/app/views/documents/index.html.erb
+              </code>
+            </pre>
+          </div>
+        </section>
+        <section>
+          <h3>The result</h3>
+          <div class="fragment fade-in">
+            <img src="images/congress_catalog.png" alt="Congress catalog">
+          </div>
+        </section>
+        <section>
+          <h3>Move to an engine</h3>
+          <div class="fragment fade-in">
+            <p>
+              Similar reasons as before, only now we are trying to
+              solve a duplication problem.
+            </p>
+          </div>
+          <div class="fragment fade-in">
+            <p>
+              Follow the same steps as before.
+            </p>
+          </div>
+        </section>
+        <section>
+          <h3>Move to an engine</h3>
+          <div class="fragment fade-in">
+            <p>Like before, copy duplicated code to a new engine.</p>
+          </div>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+                rails plugin new catalog --mountable
+              </code>
+            </pre>
+          </div>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+                cp zoolander/app/controllers/items_controller.rb
+                cp zoolander/app/views/items/index.html.erb
+
+                cp congress/app/controllers/documents_controller.rb
+                cp congress/app/views/documents/index.html.erb
+              </code>
+            </pre>
+          </div>
+        </section>
+        <section>
+          <h3>Rename routes</h3>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+                mount Catalog::Engine => '/library'
+
+                zoolander/config/routes.rb
+              </code>
+            </pre>
+          </div>
+          <div class="fragment fade-in">
+            <pre>
+              <code>
+                mount Catalog::Engine => '/catalog'
+
+                congress/config/routes.rb
+              </code>
+            </pre>
+          </div>
+        </section>
+        <section>
+          <h3>Add gems</h3>
+          <div class="fragment fade-in">
+            <pre>
+              <code data-trim>
+gem 'catalog',
+    path: '/Users/joshdayan/Projects/building_a_rails_engine_2016/catalog'
+
+zoolander/Gemfile
+              </code>
+            </pre>
+          </div>
+          <div class="fragment fade-in">
+            <pre>
+              <code data-trim>
+gem 'catalog',
+    path: '/Users/joshdayan/Projects/building_a_rails_engine_2016/catalog'
+
+congress/Gemfile
+              </code>
+            </pre>
+          </div>
+        </section>
+        <section>
+          <h3>The result</h3>
+          <div class="fragment fade-in">
+            <p>(the same)</p>
+            <img src="images/congress_catalog.png" alt="Congress catalog">
+          </div>
+        </section>
+      </section>
+      <section>
+        <h3>New problems to consider</h3>
+        <div class="fragment fade-in">
+          <p>What if catalog users wanted to use seperate models?</p>
+        </div>
+        <div class="fragment fade-in">
+          <p>What if those models had different attributes?</p>
+        </div>
+      </section>
+      <section>
+        <h2>Recap</h2>
+        <ul>
+          <li>Engines are basically normal rails applications</li>
+          <li>Engines are namespaced and use seperate assets</li>
+        </ul>
+      </section>
+      <section>
+        <h2>Questions</h2>
+      </section>
+      <section>
+        <h2>Thank you</h2>
+      </section>
+    </div>
+  </div>
+
+  <script src="lib/js/head.min.js"></script>
+  <script src="js/reveal.js"></script>
+
+  <script>
+  // More info https://github.com/hakimel/reveal.js#configuration
+  Reveal.initialize({
+    history: true,
+
+    // More info https://github.com/hakimel/reveal.js#dependencies
+    dependencies: [
+      { src: 'plugin/markdown/marked.js' },
+      { src: 'plugin/markdown/markdown.js' },
+      { src: 'plugin/notes/notes.js', async: true },
+      { src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+    ]
+  });
+  </script>
+</body>
+</html>
